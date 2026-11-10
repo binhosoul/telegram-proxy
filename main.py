@@ -2,7 +2,6 @@ import os
 from aiohttp import web
 from pyrogram import Client
 
-# Configurações que vamos pegar no Telegram
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -15,7 +14,8 @@ routes = web.RouteTableDef()
 async def home(request):
     return web.Response(text="Servidor Proxy do Telegram Rodando com Sucesso!")
 
-async def start_web():
+async def main():
+    # Inicia o servidor web do Render
     web_app = web.Application()
     web_app.add_routes(routes)
     runner = web.AppRunner(web_app)
@@ -25,10 +25,15 @@ async def start_web():
     await site.start()
     print(f"Servidor web rodando na porta {port}")
 
+    # Inicia o cliente do Telegram se as chaves existirem
+    if API_ID and API_HASH and BOT_TOKEN:
+        await app.start()
+        print("Bot do Telegram conectado com sucesso!")
+    
+    # Mantém o servidor rodando direto
+    while True:
+        await asyncio.sleep(3600)
+
 if __name__ == "__main__":
-    app.start()
     import asyncio
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(start_web())
-    import idle
-    idle()
+    asyncio.run(main())
