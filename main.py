@@ -3,7 +3,7 @@ import asyncio
 from aiohttp import web
 from pyrogram import Client
 
-# Pega as chaves que você configurou no Render
+# Pega as chaves configuradas no Render
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
@@ -29,12 +29,17 @@ async def stream_video(request):
     message_id = int(request.match_info.get("message_id"))
     
     try:
-        # Busca a mensagem do vídeo direto no Telegram
-        msg = await app.get_messages(int(chat_id) if chat_id.startswith("-") else chat_id, message_id)
-        if not msg.video and not msg.document:
-            return web.Response(text="Arquivo de vídeo não encontrado nesta mensagem.", status=404)
+        # Converte o chat_id corretamente se for número inteiro
+        target_chat = int(chat_id) if (chat_id.startswith("-") or chat_id.isdigit()) else chat_id
         
-        file_size = msg.video.file_size if msg.video else msg.document.file_size
+        # Busca a mensagem no Telegram
+        msg = await app.get_messages(target_chat, message_id)
+        
+        media = msg.video or msg.document
+        if not media:
+            return web.Response(text="Nenhum arquivo de vídeo encontrado nesta mensagem.", status=404)
+        
+        file_size = media.file_size
         
         async def file_sender():
             async for chunk in app.stream_media(msg):
@@ -76,7 +81,6 @@ async def main():
     
     await init_web()
     
-    # Mantém o servidor rodando em segundo plano
     while True:
         await asyncio.sleep(3600)
 
